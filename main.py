@@ -139,8 +139,7 @@ def start(message):
     hoy = datetime.now().strftime("%A")
     apagon = hay_apagon(bloque, hoy)
     hoy_es = en_to_es_days.get(hoy, hoy)
-    mensaje = f"📅 Hoy es {hoy_es}, {
-        datetime.now().strftime('%d de %B %Y')}\n\n"
+    mensaje = f"📅 Hoy es {hoy_es}, {datetime.now().strftime('%d de %B %Y')}\n\n"
     mensaje += f"**Bloque {bloque}**:\n"
 
     if apagon:

@@ -55,8 +55,7 @@ def start(message):
         markup.add(telebot.types.KeyboardButton(text=button))
 
     if bloque == None:
-        mensaje = f"¡Hola {
-            message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
+        mensaje = f"¡Hola {message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
         return bot.send_message(message.chat.id, mensaje)
 
     apagon = hay_apagon(bloque, datetime.now().strftime("%A"))
@@ -68,8 +67,7 @@ def start(message):
         mensaje += "- **Apagones: **\n"
         for horario in horario:
             emergencia = ' es de emergencia' if horario else ''
-            mensaje += f"  - El {horario.dia} desde las {
-                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            mensaje += f"  - El {horario.dia} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         mensaje += "No hay apagones programados para hoy.\n"
 

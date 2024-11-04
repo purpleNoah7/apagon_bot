@@ -40,3 +40,7 @@ Si deseas contribuir a Apagones, puedes hacerlo de varias maneras:
 - Reportando errores o sugiriendo mejoras en el código.
 - Haciendo Pull Requests con correcciones o mejoras.
 - Escribiendo artículos o tutoriales sobre Apagones.
+
+## Licencia
+
+Este proyecto está bajo la Licencia GNU General Public License (GPL) - consulta el archivo [LICENSE](LICENSE) para más detalles.

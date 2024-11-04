@@ -128,8 +128,7 @@ def start(message):
         markup.add(telebot.types.KeyboardButton(text=button))
 
     if bloque is None:
-        mensaje = f"¡Hola {
-            message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
+        mensaje = f"¡Hola {message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
         return bot.send_message(message.chat.id, mensaje)
 
     apagon = hay_apagon(bloque, datetime.now().strftime("%A"))

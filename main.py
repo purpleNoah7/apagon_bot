@@ -148,8 +148,7 @@ def start(message):
         for horario in horarios:
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            mensaje += f"- El {dia_es} desde las {
-                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            mensaje += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         mensaje += "No hay apagones programados para hoy.\n"
 

@@ -1,14 +1,13 @@
 import telebot
 import sqlite3
 import os
-import locale
 import schedule
 import threading
 import time
 from create_database import verify_database
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from functions_database import create_user, get_user, update_user, login, delete_user, get_block_for_user, hay_apagon, get_apagones, clean_database, clean_horarios
+from functions_database import create_user, get_user, delete_user, get_block_for_user, hay_apagon, get_apagones,  clean_horarios, cambio_de_bloque
 
 # Cargar variables del archivo .env
 load_dotenv()
@@ -20,16 +19,26 @@ TOKEN = os.getenv('TELEGRAM_TOKEN')
 ADMIN_ID = os.getenv('ADMIN_ID')
 bot = telebot.TeleBot(TOKEN)
 
-locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+en_to_es_days = {
+    "Monday": "lunes",
+    "Tuesday": "martes",
+    "Wednesday": "miércoles",
+    "Thursday": "jueves",
+    "Friday": "viernes",
+    "Saturday": "sábado",
+    "Sunday": "domingo"
+}
 
+es_to_en_days = {v: k for k, v in en_to_es_days.items()}
 
 
 def add_apagones(bloque, dia, start_hour, end_hour, emergencia, message):
+    dia_ingles = es_to_en_days.get(dia.lower(), dia)
 
     conn = sqlite3.connect('apagones.db')
     cursor = conn.cursor()
     cursor.execute("INSERT INTO horarios (bloque, dia, start_hour, end_hour, emergencia) VALUES (?, ?, ?, ?, ?)",
-                   (bloque, dia, start_hour, end_hour, emergencia))
+                   (bloque, dia_ingles, start_hour, end_hour, emergencia))
     conn.commit()
     conn.close()
     return True
@@ -55,11 +64,9 @@ def add(message):
 
 def process_bloque_step_add_apagon(message):
     bloque = message.text
-    print(bloque)
     markup = telebot.types.ReplyKeyboardMarkup(
         one_time_keyboard=True, resize_keyboard=True)
-    day_list = ["lunes", "martes", "miércoles",
-                "jueves", "viernes", "sábado", "domingo"]
+    day_list = list(en_to_es_days.values())
     for day in day_list:
         markup.add(telebot.types.KeyboardButton(text=day))
 
@@ -69,7 +76,6 @@ def process_bloque_step_add_apagon(message):
 
 
 def process_dia_step(message, bloque):
-    print(bloque)
     dia = message.text
     msg = bot.send_message(
         message.chat.id, 'Ingrese la hora de inicio (HH:MM):')
@@ -100,7 +106,6 @@ def process_end_hour_step(message, bloque, dia, start_hour):
 
 def process_emergencia_step(message, bloque, dia, start_hour, end_hour):
     emergencia = (message.text.lower() == 'sí')
-
     add_apagones(bloque, dia, start_hour, end_hour, emergencia, message)
     bot.send_message(message.chat.id, 'Apagón añadido exitosamente.')
 
@@ -115,7 +120,7 @@ def clean(message):
     bot.send_message(message.chat.id, 'Base de datos limpiada exitosamente.')
 
 
-@ bot.message_handler(commands=['apagon'])
+@bot.message_handler(commands=['apagon'])
 def start(message):
     bloque = get_block_for_user(message.from_user.id)
 
@@ -128,26 +133,65 @@ def start(message):
         markup.add(telebot.types.KeyboardButton(text=button))
 
     if bloque is None:
-        mensaje = f"¡Hola {message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
+        mensaje = f"¡Hola {
+            message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
         return bot.send_message(message.chat.id, mensaje)
 
-    apagon = hay_apagon(bloque, datetime.now().strftime("%A"))
-    mensaje = f"📅 Hoy es {datetime.now().strftime('%A, %d de %B %Y')}\n\n"
+    hoy = datetime.now().strftime("%A")
+    apagon = hay_apagon(bloque, hoy)
+    hoy_es = en_to_es_days.get(hoy, hoy)
+    mensaje = f"📅 Hoy es {hoy_es}, {
+        datetime.now().strftime('%d de %B %Y')}\n\n"
     mensaje += f"**Bloque {bloque}**:\n"
 
     if apagon:
-        horarios = get_apagones(bloque, datetime.now().strftime("%A"))
+        horarios = get_apagones(bloque, hoy)
         mensaje += "- **Apagones: **\n"
         for horario in horarios:
             emergencia = ' es de emergencia' if horario.emergencia else ''
-            mensaje += f"-El {horario.dia} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            dia_es = en_to_es_days.get(horario.dia, horario.dia)
+            mensaje += f"- El {dia_es} desde las {
+                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         mensaje += "No hay apagones programados para hoy.\n"
 
     bot.send_message(message.chat.id, mensaje)
 
 
-@ bot.message_handler(commands=['registrarse'])
+def send_notification(user_id, bloque):
+    hoy = datetime.now().strftime("%A")
+    manana = (datetime.now() + timedelta(days=1)).strftime("%A")
+    hoy_es = en_to_es_days.get(hoy, hoy)
+    manana_es = en_to_es_days.get(manana, manana)
+
+    message = f"📅 Notificaciones de apagones para {bloque}\n\n"
+
+    apagones_hoy = hay_apagon(bloque, hoy)
+    if apagones_hoy:
+        message += f"**Para hoy ({hoy_es}):**\n"
+        for horario in get_apagones(bloque, hoy):
+            emergencia = ' es de emergencia' if horario.emergencia else ''
+            dia_es = en_to_es_days.get(horario.dia, horario.dia)
+            message += f"- El {dia_es} desde las {
+                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+    else:
+        message += f"No hay apagones programados para hoy ({hoy_es}).\n\n"
+
+    apagones_manana = hay_apagon(bloque, manana)
+    if apagones_manana:
+        message += f"\n**Para mañana ({manana_es}):**\n"
+        for horario in get_apagones(bloque, manana):
+            emergencia = ' es de emergencia' if horario.emergencia else ''
+            dia_es = en_to_es_days.get(horario.dia, horario.dia)
+            message += f"- El {dia_es} desde las {
+                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+    else:
+        message += f"No hay apagones programados para mañana ({manana_es}).\n"
+
+    bot.send_message(user_id, message)
+
+
+@bot.message_handler(commands=['registrarse'])
 def registrarse(message):
     chat_id = message.chat.id
     user_id = message.from_user.id
@@ -172,41 +216,47 @@ def registrarse(message):
 
 def process_bloque_step(message, user_id, username):
     bloque = message.text
+    if(bloque != 'B1' and bloque != 'B2' and bloque != 'B3' and bloque != 'B4'):
+        bot.send_message(message.chat.id, "El bloque seleccionado no es válido.")
+        return
     create_user(user_id, username, bloque)
     bot.send_message(
         message.chat.id, f"Te has registrado con éxito en el bloque {bloque}.", reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
-@ bot.message_handler(commands=['stop'])
+@bot.message_handler(commands=['clean'])
+def clean(message):
+    user_id_str = str(message.from_user.id)
+    if user_id_str != ADMIN_ID:
+        bot.send_message(message.chat.id, "No eres el administrador.")
+        return
+    clean_horarios()
+    bot.send_message(message.chat.id, 'Base de datos limpiada exitosamente.')
+
+@bot.message_handler(commands=['cambio'])
+def cambio(message):
+    bot.send_message(message.chat.id, "Por favor, selecciona tu bloque.")
+    markup = telebot.types.ReplyKeyboardMarkup(
+        one_time_keyboard=True, resize_keyboard=True)
+    bloques_list = ['B1', 'B2', 'B3', 'B4']
+    for bloque in bloques_list:
+        markup.add(telebot.types.KeyboardButton(text=bloque))
+    msg = bot.send_message(
+        message.chat.id, "Por favor, selecciona tu bloque.", reply_markup=markup)
+    bot.register_next_step_handler(msg, process_bloque_step_cambio, message)
+
+def process_bloque_step_cambio(message, previous_message):
+    bloque = message.text
+    if(bloque != 'B1' and bloque != 'B2' and bloque != 'B3' and bloque != 'B4'):
+        bot.send_message(message.chat.id, "El bloque seleccionado no es válido.")
+        return
+    cambio_de_bloque(bloque, previous_message.from_user.id)
+    bot.send_message(previous_message.chat.id, f"Se ha cambiado tu bloque a {bloque}.", reply_markup=telebot.types.ReplyKeyboardRemove())
+
+@bot.message_handler(commands=['stop'])
 def stop(message):
     delete_user(message.from_user.id)
     bot.send_message(message.chat.id, "Has cancelado tu inscripción.")
-
-
-def send_notification(user_id, bloque):
-    hoy = datetime.now().strftime("%A")
-    manana = (datetime.now() + timedelta(days=1)).strftime("%A")
-    message = f"📅 Notificaciones de apagones para {bloque}\n\n"
-
-    apagones_hoy = hay_apagon(bloque, hoy)
-    if apagones_hoy:
-        message += f"**Para hoy ({hoy}):**\n"
-        for horario in get_apagones(bloque, hoy):
-            emergencia = ' es de emergencia' if horario.emergencia else ''
-            message += f"-El{horario.dia} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
-    else:
-        message += f"No hay apagones programados para hoy ({hoy}).\n\n"
-
-    apagones_manana = hay_apagon(bloque, manana)
-    if apagones_manana:
-        message += f"\n**Para mañana ({manana}):**\n"
-        for horario in get_apagones(bloque, manana):
-            emergencia = ' es de emergencia' if horario.emergencia == 'sí' else ''
-            message += f"-El {horario.dia} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
-    else:
-        message += f"No hay apagones programados para mañana ({manana}).\n"
-
-    bot.send_message(user_id, message)
 
 
 def notificar():
@@ -251,7 +301,7 @@ def help(message):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "¡Hola! Estoy aquí para ayudarte a conocer sobre el horario de los apagones. ¿Qué necesitas?\n\n/registrarse - Registrarse en un bloque\n/stop - Cancelar el registro de un bloque\n/apagon - Ver el horario de hoy de mi bloque\n/notificar - Notificarme de los apagones programados\n/clean - Limpiar la base de datos")
+    bot.send_message(message.chat.id, "¡Hola! Estoy aquí para ayudarte a conocer sobre el horario de los apagones. ¿Qué necesitas?\n\n/registrarse - Registrarse en un bloque\n/stop - Cancelar el registro de un bloque\n/apagon - Ver el horario de hoy de mi bloque\n/notificar - Notificarme de los apagones programados\n/clean - Limpiar la base de datos\n/cambio - Cambiar de bloque")
 
 
 bot.polling()

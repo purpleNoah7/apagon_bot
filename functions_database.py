@@ -112,3 +112,20 @@ def get_apagones(bloque, dia):
     apagones = [Horario(id=row[0], bloque=row[1], dia=row[2],
                         start_hour=row[3], end_hour=row[4], emergencia=row[5]) for row in rows]
     return apagones
+
+def cambio_de_bloque(bloque, user_id):
+    conn = sqlite3.connect('apagones.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE usuarios SET bloque=? WHERE telegram_id=?", (bloque, user_id))
+    conn.commit()
+    conn.close()
+    return True
+
+def eliminar_apagon(id):
+    conn = sqlite3.connect('apagones.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM horarios WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+    return True
+

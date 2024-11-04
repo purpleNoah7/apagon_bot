@@ -31,6 +31,18 @@ en_to_es_days = {
 
 es_to_en_days = {v: k for k, v in en_to_es_days.items()}
 
+@bot.message_handler(commands=['send_db'])
+def send_db(message):
+    user_id_str = str(message.from_user.id)
+    if user_id_str != ADMIN_ID:
+        bot.send_message(message.chat.id, "No eres el administrador.")
+        return
+    
+    try:
+        with open('apagones.db', 'rb') as db_file:
+            bot.send_document(message.chat.id, db_file)
+    except Exception as e:
+        bot.send_message(message.chat.id, f"No se pudo enviar la base de datos: {str(e)}")
 
 def add_apagones(bloque, dia, start_hour, end_hour, emergencia, message):
     dia_ingles = es_to_en_days.get(dia.lower(), dia)
@@ -286,6 +298,29 @@ def notificarMSG(message):
     notificar()
     bot.send_message(message.chat.id, "Notificaciones enviadas.")
 
+@bot.message_handler(commands=['broadcast'])
+def broadcast(message):
+    user_id_str = str(message.from_user.id)
+    if user_id_str != ADMIN_ID:
+        bot.send_message(message.chat.id, "No eres el administrador.")
+        return
+    
+    broadcast_message = message.text.partition(' ')[2]
+    
+    if not broadcast_message:
+        bot.send_message(message.chat.id, "Por favor, proporciona un mensaje para el broadcast.")
+        return
+
+    conn = sqlite3.connect('apagones.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT telegram_id FROM usuarios")
+    users = cursor.fetchall()
+    conn.close()
+
+    for user_id, in users:
+        bot.send_message(user_id, broadcast_message)
+
+    bot.send_message(message.chat.id, "Notificaciones enviadas a todos los usuarios.")
 
 # Start the scheduling thread
 threading.Thread(target=run_schedule, daemon=True).start()

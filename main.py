@@ -310,7 +310,7 @@ def run_schedule():
 def notificarMSG(message):
     bot.send_message(
         message.chat.id,
-        "Este bot envia notificaciones de apagones a los usuarios registrados cada 6h.",
+        "Este bot envia notificaciones de apagones a los usuarios registrados cada día a las 7h y a las 19h.",
     )
 
 

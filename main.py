@@ -169,8 +169,7 @@ def send_notification(user_id, bloque):
         for horario in get_apagones(bloque, hoy):
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            message += f"- El {dia_es} desde las {
-                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            message += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         message += f"No hay apagones programados para hoy ({hoy_es}).\n\n"
 
@@ -180,8 +179,7 @@ def send_notification(user_id, bloque):
         for horario in get_apagones(bloque, manana):
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            message += f"- El {dia_es} desde las {
-                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            message += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         message += f"No hay apagones programados para mañana ({manana_es}).\n"
 

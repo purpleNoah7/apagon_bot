@@ -43,4 +43,4 @@ Si deseas contribuir a Apagones, puedes hacerlo de varias maneras:
 
 ## Licencia
 
-Este proyecto está bajo la Licencia GNU General Public License (GPL) - consulta el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la Licencia GNU General Public License (GPL) - consulta el archivo [LICENSE](LICENSE.txt) para más detalles.

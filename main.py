@@ -5,21 +5,23 @@ import locale
 import schedule
 import threading
 import time
-
+from create_database import verify_database
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from functions_database import create_user, get_user, update_user, login, delete_user, get_block_for_user, hay_apagon, get_apagones
+from functions_database import create_user, get_user, update_user, login, delete_user, get_block_for_user, hay_apagon, get_apagones, clean_database, clean_horarios
 
 # Cargar variables del archivo .env
 load_dotenv()
 
 # Obtener el token del archivo .env
+
+verify_database()
 TOKEN = os.getenv('TELEGRAM_TOKEN')
 ADMIN_ID = os.getenv('ADMIN_ID')
-print(ADMIN_ID)
 bot = telebot.TeleBot(TOKEN)
 
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+
 
 
 def add_apagones(bloque, dia, start_hour, end_hour, emergencia, message):
@@ -53,13 +55,13 @@ def add(message):
 
 def process_bloque_step_add_apagon(message):
     bloque = message.text
-
+    print(bloque)
     markup = telebot.types.ReplyKeyboardMarkup(
         one_time_keyboard=True, resize_keyboard=True)
-    bloques_list = ["lunes", "martes", "miércoles",
-                    "jueves", "viernes", "sábado", "domingo"]
-    for bloque in bloques_list:
-        markup.add(telebot.types.KeyboardButton(text=bloque))
+    day_list = ["lunes", "martes", "miércoles",
+                "jueves", "viernes", "sábado", "domingo"]
+    for day in day_list:
+        markup.add(telebot.types.KeyboardButton(text=day))
 
     msg = bot.send_message(
         message.chat.id, "Por favor, selecciona el día.", reply_markup=markup)
@@ -67,6 +69,7 @@ def process_bloque_step_add_apagon(message):
 
 
 def process_dia_step(message, bloque):
+    print(bloque)
     dia = message.text
     msg = bot.send_message(
         message.chat.id, 'Ingrese la hora de inicio (HH:MM):')
@@ -84,9 +87,9 @@ def process_end_hour_step(message, bloque, dia, start_hour):
     end_hour = message.text
     markup = telebot.types.ReplyKeyboardMarkup(
         one_time_keyboard=True, resize_keyboard=True)
-    bloques_list = ["sí", "no"]
-    for bloque in bloques_list:
-        markup.add(telebot.types.KeyboardButton(text=bloque))
+    emergencys_list = ["sí", "no"]
+    for emergency in emergencys_list:
+        markup.add(telebot.types.KeyboardButton(text=emergency))
 
     msg = bot.send_message(
         message.chat.id, 'Seleccione si es emergencia (sí/no):', reply_markup=markup)
@@ -102,7 +105,17 @@ def process_emergencia_step(message, bloque, dia, start_hour, end_hour):
     bot.send_message(message.chat.id, 'Apagón añadido exitosamente.')
 
 
-@ bot.message_handler(commands=['start'])
+@bot.message_handler(commands=['clean'])
+def clean(message):
+    user_id_str = str(message.from_user.id)
+    if user_id_str != ADMIN_ID:
+        bot.send_message(message.chat.id, "No eres el administrador.")
+        return
+    clean_horarios()
+    bot.send_message(message.chat.id, 'Base de datos limpiada exitosamente.')
+
+
+@ bot.message_handler(commands=['apagon'])
 def start(message):
     bloque = get_block_for_user(message.from_user.id)
 
@@ -221,13 +234,28 @@ def run_schedule():
         time.sleep(60)
 
 
-@ bot.message_handler(commands=['notificar'])
+@bot.message_handler(commands=['notificar'])
 def notificarMSG(message):
+    user_id_str = str(message.from_user.id)
+    if user_id_str != ADMIN_ID:
+        bot.send_message(message.chat.id, "No eres el administrador.")
+        return
     notificar()
     bot.send_message(message.chat.id, "Notificaciones enviadas.")
 
 
 # Start the scheduling thread
 threading.Thread(target=run_schedule, daemon=True).start()
+
+
+@bot.message_handler(commands=['help'])
+def help(message):
+    bot.send_message(message.chat.id, "Comandos disponibles:\n\n/start - Iniciar el bot\n/registrarse - Registrarse en un bloque\n/stop - Cancelar el registro de un bloque\n/apagon - Ver el horario de hoy de mi bloque")
+
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message.chat.id, "¡Hola! Estoy aquí para ayudarte a conocer sobre el horario de los apagones. ¿Qué necesitas?\n\n/registrarse - Registrarse en un bloque\n/stop - Cancelar el registro de un bloque\n/apagon - Ver el horario de hoy de mi bloque\n/notificar - Notificarme de los apagones programados\n/clean - Limpiar la base de datos")
+
 
 bot.polling()

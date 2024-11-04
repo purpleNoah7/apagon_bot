@@ -77,6 +77,7 @@ def clean_database():
     conn = sqlite3.connect('apagones.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM usuarios")
+    cursor.execute("DELETE FROM horarios")
     conn.commit()
     conn.close()
     return True

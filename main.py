@@ -47,6 +47,8 @@ def add_apagones(bloque, dia, start_hour, end_hour, emergencia, message):
 @bot.message_handler(commands=['add'])
 def add(message):
     user_id_str = str(message.from_user.id)
+    print(user_id_str)
+    print(ADMIN_ID)
     if user_id_str != ADMIN_ID:
         bot.send_message(message.chat.id, "No eres el administrador.")
         return

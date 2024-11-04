@@ -136,15 +136,13 @@ def start(message):
         markup.add(telebot.types.KeyboardButton(text=button))
 
     if bloque is None:
-        mensaje = f"¡Hola {
-            message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
+        mensaje = f"¡Hola {message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
         return bot.send_message(message.chat.id, mensaje)
 
     hoy = datetime.now().strftime("%A")
     apagon = hay_apagon(bloque, hoy)
     hoy_es = en_to_es_days.get(hoy, hoy)
-    mensaje = f"📅 Hoy es {hoy_es}, {
-        datetime.now().strftime('%d de %B %Y')}\n\n"
+    mensaje = f"📅 Hoy es {hoy_es}, {datetime.now().strftime('%d de %B %Y')}\n\n"
     mensaje += f"**Bloque {bloque}**:\n"
 
     if apagon:
@@ -153,8 +151,7 @@ def start(message):
         for horario in horarios:
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            mensaje += f"- El {dia_es} desde las {
-                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            mensaje += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         mensaje += "No hay apagones programados para hoy.\n"
 
@@ -175,8 +172,7 @@ def send_notification(user_id, bloque):
         for horario in get_apagones(bloque, hoy):
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            message += f"- El {dia_es} desde las {
-                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            message += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         message += f"No hay apagones programados para hoy ({hoy_es}).\n\n"
 
@@ -186,8 +182,7 @@ def send_notification(user_id, bloque):
         for horario in get_apagones(bloque, manana):
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            message += f"- El {dia_es} desde las {
-                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            message += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         message += f"No hay apagones programados para mañana ({manana_es}).\n"
 
@@ -258,8 +253,7 @@ def process_bloque_step_cambio(message, previous_message):
             message.chat.id, "El bloque seleccionado no es válido.")
         return
     cambio_de_bloque(bloque, previous_message.from_user.id)
-    bot.send_message(previous_message.chat.id, f"Se ha cambiado tu bloque a {
-                     bloque}.", reply_markup=telebot.types.ReplyKeyboardRemove())
+    bot.send_message(previous_message.chat.id, f"Se ha cambiado tu bloque a {bloque}.", reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 @bot.message_handler(commands=['stop'])

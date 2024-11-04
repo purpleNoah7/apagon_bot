@@ -1,5 +1,4 @@
 import telebot
-import sqlite3
 import os
 import schedule
 import threading
@@ -7,8 +6,7 @@ import time
 from create_database import verify_database
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from functions_database import create_user, get_user, delete_user, get_block_for_user, hay_apagon, get_apagones,  clean_horarios, cambio_de_bloque
-
+from functions_database import create_user, get_user, delete_user, get_block_for_user, hay_apagon, get_apagones, clean_horarios, cambio_de_bloque, add_apagones, notificar, get_connection
 # Cargar variables del archivo .env
 load_dotenv()
 
@@ -31,29 +29,20 @@ en_to_es_days = {
 
 es_to_en_days = {v: k for k, v in en_to_es_days.items()}
 
+
 @bot.message_handler(commands=['send_db'])
 def send_db(message):
     user_id_str = str(message.from_user.id)
     if user_id_str != ADMIN_ID:
         bot.send_message(message.chat.id, "No eres el administrador.")
         return
-    
+
     try:
         with open('apagones.db', 'rb') as db_file:
             bot.send_document(message.chat.id, db_file)
     except Exception as e:
-        bot.send_message(message.chat.id, f"No se pudo enviar la base de datos: {str(e)}")
-
-def add_apagones(bloque, dia, start_hour, end_hour, emergencia, message):
-    dia_ingles = es_to_en_days.get(dia.lower(), dia)
-
-    conn = sqlite3.connect('apagones.db')
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO horarios (bloque, dia, start_hour, end_hour, emergencia) VALUES (?, ?, ?, ?, ?)",
-                   (bloque, dia_ingles, start_hour, end_hour, emergencia))
-    conn.commit()
-    conn.close()
-    return True
+        bot.send_message(
+            message.chat.id, f"No se pudo enviar la base de datos: {str(e)}")
 
 
 @bot.message_handler(commands=['add'])
@@ -147,13 +136,15 @@ def start(message):
         markup.add(telebot.types.KeyboardButton(text=button))
 
     if bloque is None:
-        mensaje = f"¡Hola {message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
+        mensaje = f"¡Hola {
+            message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
         return bot.send_message(message.chat.id, mensaje)
 
     hoy = datetime.now().strftime("%A")
     apagon = hay_apagon(bloque, hoy)
     hoy_es = en_to_es_days.get(hoy, hoy)
-    mensaje = f"📅 Hoy es {hoy_es}, {datetime.now().strftime('%d de %B %Y')}\n\n"
+    mensaje = f"📅 Hoy es {hoy_es}, {
+        datetime.now().strftime('%d de %B %Y')}\n\n"
     mensaje += f"**Bloque {bloque}**:\n"
 
     if apagon:
@@ -162,7 +153,8 @@ def start(message):
         for horario in horarios:
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            mensaje += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            mensaje += f"- El {dia_es} desde las {
+                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         mensaje += "No hay apagones programados para hoy.\n"
 
@@ -183,7 +175,8 @@ def send_notification(user_id, bloque):
         for horario in get_apagones(bloque, hoy):
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            message += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            message += f"- El {dia_es} desde las {
+                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         message += f"No hay apagones programados para hoy ({hoy_es}).\n\n"
 
@@ -193,7 +186,8 @@ def send_notification(user_id, bloque):
         for horario in get_apagones(bloque, manana):
             emergencia = ' es de emergencia' if horario.emergencia else ''
             dia_es = en_to_es_days.get(horario.dia, horario.dia)
-            message += f"- El {dia_es} desde las {horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
+            message += f"- El {dia_es} desde las {
+                horario.start_hour} hasta las {horario.end_hour} {emergencia}\n"
     else:
         message += f"No hay apagones programados para mañana ({manana_es}).\n"
 
@@ -225,8 +219,9 @@ def registrarse(message):
 
 def process_bloque_step(message, user_id, username):
     bloque = message.text
-    if(bloque != 'B1' and bloque != 'B2' and bloque != 'B3' and bloque != 'B4'):
-        bot.send_message(message.chat.id, "El bloque seleccionado no es válido.")
+    if (bloque != 'B1' and bloque != 'B2' and bloque != 'B3' and bloque != 'B4'):
+        bot.send_message(
+            message.chat.id, "El bloque seleccionado no es válido.")
         return
     create_user(user_id, username, bloque)
     bot.send_message(
@@ -242,6 +237,7 @@ def clean(message):
     clean_horarios()
     bot.send_message(message.chat.id, 'Base de datos limpiada exitosamente.')
 
+
 @bot.message_handler(commands=['cambio'])
 def cambio(message):
     bot.send_message(message.chat.id, "Por favor, selecciona tu bloque.")
@@ -254,13 +250,16 @@ def cambio(message):
         message.chat.id, "Por favor, selecciona tu bloque.", reply_markup=markup)
     bot.register_next_step_handler(msg, process_bloque_step_cambio, message)
 
+
 def process_bloque_step_cambio(message, previous_message):
     bloque = message.text
-    if(bloque != 'B1' and bloque != 'B2' and bloque != 'B3' and bloque != 'B4'):
-        bot.send_message(message.chat.id, "El bloque seleccionado no es válido.")
+    if (bloque != 'B1' and bloque != 'B2' and bloque != 'B3' and bloque != 'B4'):
+        bot.send_message(
+            message.chat.id, "El bloque seleccionado no es válido.")
         return
     cambio_de_bloque(bloque, previous_message.from_user.id)
-    bot.send_message(previous_message.chat.id, f"Se ha cambiado tu bloque a {bloque}.", reply_markup=telebot.types.ReplyKeyboardRemove())
+    bot.send_message(previous_message.chat.id, f"Se ha cambiado tu bloque a { bloque}.", reply_markup=telebot.types.ReplyKeyboardRemove())
+
 
 @bot.message_handler(commands=['stop'])
 def stop(message):
@@ -268,19 +267,9 @@ def stop(message):
     bot.send_message(message.chat.id, "Has cancelado tu inscripción.")
 
 
-def notificar():
-    conn = sqlite3.connect('apagones.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT telegram_id, bloque FROM usuarios")
-    users = cursor.fetchall()
-    conn.close()
-    for user_id, bloque in users:
-        send_notification(user_id, bloque)
-
-
 # Schedule tasks
-schedule.every().day.at("00:00").do(notificar)
-schedule.every().day.at("06:00").do(notificar)
+schedule.every().day.at("00:00").do(notificar, send_notification)
+schedule.every().day.at("06:00").do(notificar, send_notification)
 
 
 def run_schedule():
@@ -298,29 +287,33 @@ def notificarMSG(message):
     notificar()
     bot.send_message(message.chat.id, "Notificaciones enviadas.")
 
+
 @bot.message_handler(commands=['broadcast'])
 def broadcast(message):
     user_id_str = str(message.from_user.id)
     if user_id_str != ADMIN_ID:
         bot.send_message(message.chat.id, "No eres el administrador.")
         return
-    
+
+    # Extract the text after the command
     broadcast_message = message.text.partition(' ')[2]
-    
+
     if not broadcast_message:
-        bot.send_message(message.chat.id, "Por favor, proporciona un mensaje para el broadcast.")
+        bot.send_message(
+            message.chat.id, "Por favor, proporciona un mensaje para el broadcast.")
         return
 
-    conn = sqlite3.connect('apagones.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT telegram_id FROM usuarios")
-    users = cursor.fetchall()
-    conn.close()
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT telegram_id FROM usuarios")
+            users = cursor.fetchall()
 
     for user_id, in users:
         bot.send_message(user_id, broadcast_message)
 
-    bot.send_message(message.chat.id, "Notificaciones enviadas a todos los usuarios.")
+    bot.send_message(
+        message.chat.id, "Notificaciones enviadas a todos los usuarios.")
+
 
 # Start the scheduling thread
 threading.Thread(target=run_schedule, daemon=True).start()

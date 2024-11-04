@@ -95,7 +95,7 @@ def hay_apagon(bloque, dia):
     conn = sqlite3.connect('apagones.db')
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT COUNT(*) FROM horarios WHERE bloque=? AND dia=?", (bloque, dia.capitalize()))
+        "SELECT COUNT(*) FROM horarios WHERE bloque=? AND dia=?", (bloque, dia))
     apagon_existe = cursor.fetchone()[0] > 0
     conn.close()
     return apagon_existe
@@ -105,7 +105,7 @@ def get_apagones(bloque, dia):
     conn = sqlite3.connect('apagones.db')
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, bloque, dia, start_hour, end_hour, emergencia FROM horarios WHERE bloque=? AND dia=?", (bloque, dia.capitalize()))
+        "SELECT id, bloque, dia, start_hour, end_hour, emergencia FROM horarios WHERE bloque=? AND dia=?", (bloque, dia))
     rows = cursor.fetchall()
     conn.close()
     apagones = [Horario(id=row[0], bloque=row[1], dia=row[2],

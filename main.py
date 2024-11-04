@@ -263,13 +263,13 @@ def stop(message):
 
 
 # Schedule tasks
-schedule.every().day.at("00:00").do(notificar, send_notification)
-schedule.every().day.at("06:00").do(notificar, send_notification)
+schedule.every(6).hours.do(notificar, send_notification)
 
 
 def run_schedule():
     while True:
         schedule.run_pending()
+        print("Scheduler: Running...")
         time.sleep(60)
 
 

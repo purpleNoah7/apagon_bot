@@ -296,7 +296,7 @@ def stop(message):
 
 # Schedule tasks
 schedule.every().day.at("07:00").do(notificar, send_notification)
-schedule.every().day.at("07:00").do(notificar, send_notification)
+schedule.every().day.at("19:00").do(notificar, send_notification)
 
 
 def run_schedule():

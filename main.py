@@ -214,7 +214,8 @@ def registrarse(message):
     chat_id = message.chat.id
     user_id = message.from_user.id
     username = message.from_user.username
-
+    if username == None:
+        username = message.from_user.first_name
     existing_user = get_user(user_id)
     if existing_user:
         bot.send_message(
@@ -294,7 +295,8 @@ def stop(message):
 
 
 # Schedule tasks
-schedule.every(6).hours.do(notificar, send_notification)
+schedule.every.day.at("00:00").do(notificar, send_notification)
+schedule.every.day.at("06:00").do(notificar, send_notification)
 
 
 def run_schedule():
@@ -313,7 +315,7 @@ def notificarMSG(message):
 
 
 @bot.message_handler(commands=["tiposdeapagones"])
-def notificarMSG(message):
+def ayudaTiposdeapagones(message):
     bot.send_message(
         message.chat.id,
         "Existen 2 tipos de apagones según la UNE:\n\n- Programados: Por deficit de generacion\n- Emergencia: ante situaciones de emergencias por salidas imprevistas de plantas generadoras",
@@ -321,7 +323,7 @@ def notificarMSG(message):
 
 
 @bot.message_handler(commands=["notificaradmin"])
-def notificarMSG(message):
+def notificarAdminMSG(message):
     user_id_str = str(message.from_user.id)
     if user_id_str != ADMIN_ID:
         bot.send_message(message.chat.id, "No eres el administrador.")

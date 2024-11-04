@@ -34,6 +34,7 @@ class Horario:
 
 
 def create_user(user_id, username, bloque):
+    print(user_id, username, bloque)
     with get_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute("INSERT INTO usuarios (telegram_id, nombre, bloque) VALUES (%s, %s, %s)",

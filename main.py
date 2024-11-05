@@ -28,6 +28,7 @@ load_dotenv()
 verify_database()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
+print(TOKEN)
 bot = telebot.TeleBot(TOKEN)
 
 en_to_es_days = {
@@ -41,6 +42,30 @@ en_to_es_days = {
 }
 
 es_to_en_days = {v: k for k, v in en_to_es_days.items()}
+def enviar_mensaje_procesando(chat_id):
+    bot.send_message(chat_id, "Procesando...")
+
+def enviar_mensaje_registro(chat_id, first_name):
+    mensaje = (
+        f"¡Hola {first_name}! No estás registrado en ningún bloque. "
+        "Por favor, usa el comando /registrarse para registrarte.\n\n"
+    )
+    bot.send_message(chat_id, mensaje)
+
+
+def generar_mensaje_apagones(bloque):
+    mensaje = f"📅 Horarios de apagones para el bloque {bloque} esta semana:\n\n"
+    for day_en, day_es in en_to_es_days.items():
+        apagones = hay_apagon(bloque, day_en)
+        mensaje += f"**{day_es}:**\n"
+        if apagones:
+            for horario in get_apagones(bloque, day_en):
+                emergencia = " es de emergencia" if horario.emergencia else ""
+                mensaje += f"- Desde las {horario.start_hour} hasta las {horario.end_hour}{emergencia}\n"
+        else:
+            mensaje += "No hay apagones programados.\n"
+        mensaje += "\n"
+    return mensaje
 
 
 @bot.message_handler(commands=["send_db"])
@@ -361,6 +386,22 @@ def broadcast(message):
 
 # Start the scheduling thread
 threading.Thread(target=run_schedule, daemon=True).start()
+
+
+@bot.message_handler(commands=["semana"])
+def semana(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+
+    print("semana")
+    enviar_mensaje_procesando(chat_id)
+    bloque = get_block_for_user(user_id)
+    if bloque is None:
+        enviar_mensaje_registro(chat_id, message.from_user.first_name)
+    else:
+        mensaje_apagones = generar_mensaje_apagones(bloque)
+        bot.send_message(chat_id, mensaje_apagones)
+    bot.send_message(message.chat.id, mensaje_apagones)
 
 
 @bot.message_handler(commands=["help"])

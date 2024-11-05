@@ -5,7 +5,7 @@ import threading
 import time
 import pytz
 from create_database import verify_database
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from functions_database import (
     create_user,

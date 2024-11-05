@@ -332,7 +332,7 @@ def notificarAdminMSG(message):
     if user_id_str != ADMIN_ID:
         bot.send_message(message.chat.id, "No eres el administrador.")
         return
-    notificar()
+    notificar(send_notification)
     bot.send_message(message.chat.id, "Notificaciones enviadas.")
 
 

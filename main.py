@@ -3,6 +3,7 @@ import os
 import schedule
 import threading
 import time
+import pytz
 from create_database import verify_database
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -41,6 +42,9 @@ en_to_es_days = {
 }
 
 es_to_en_days = {v: k for k, v in en_to_es_days.items()}
+
+tz = pytz.timezone("America/New_York")
+hoy = datetime.now(tz).strftime("%A")
 
 
 @bot.message_handler(commands=["send_db"])
@@ -159,10 +163,10 @@ def start(message):
         mensaje = f"¡Hola {message.from_user.first_name}! No estás registrado en ningún bloque. Por favor, usa el comando /registrarse para registrarte.\n\n"
         return bot.send_message(message.chat.id, mensaje)
 
-    hoy = datetime.now().strftime("%A")
+    
     apagon = hay_apagon(bloque, hoy)
     hoy_es = en_to_es_days.get(hoy, hoy)
-    mensaje = f"📅 Hoy es {hoy_es}, {datetime.now().strftime('%d de %B %Y')}\n\n"
+    mensaje = f"📅 Hoy es {hoy_es}, {datetime.now(tz).strftime('%d de %B %Y')}\n\n"
     mensaje += f"**Bloque {bloque}**:\n"
 
     if apagon:
@@ -179,7 +183,7 @@ def start(message):
 
 
 def send_notification(user_id, bloque):
-    hoy = datetime.now().strftime("%A")
+    
     manana = (datetime.now() + timedelta(days=1)).strftime("%A")
     hoy_es = en_to_es_days.get(hoy, hoy)
     manana_es = en_to_es_days.get(manana, manana)

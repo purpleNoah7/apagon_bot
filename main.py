@@ -45,7 +45,7 @@ es_to_en_days = {v: k for k, v in en_to_es_days.items()}
 
 tz = pytz.timezone("America/New_York")
 hoy = datetime.now(tz).strftime("%A")
-
+print(hoy)
 
 @bot.message_handler(commands=["send_db"])
 def send_db(message):
